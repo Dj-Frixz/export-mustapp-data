@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Must data export</h1>
+    <h2>Must username to IMDb IDs</h2>
+    <input type="text" id="username" autocomplete="username">
+    <label for="username">Must username</label>
+    <button onclick="handleButton()">Cerca</button>
+    <br><br>
+    <p id="message">ciao</p>
+</body>
+<script src="script.js"></script>
+<script>
+    async function handleButton() {
+        let username = document.getElementById('username').value;
+        let ids = await retrieveIMDbIDs(username);
+        // let ids = [1,2,3,4];
+        document.getElementById('message').innerText = ids;
+    }
+</script>
+</html>
