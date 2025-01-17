@@ -3,23 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Must exporter</title>
+    <link rel="icon" type="image/png" href="/favicon/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="Must Exp" />
+    <link rel="manifest" href="/favicon/site.webmanifest" />
 </head>
 <body>
-    <h1>Must data export</h1>
-    <h2>Must username to IMDb IDs</h2>
-    <input type="text" id="username" autocomplete="username">
-    <label for="username">Must username</label>
-    <button onclick="handleButton()">Cerca</button>
-    <br><br>
-    <p id="message"></p>
+    <div class="container">
+        <h1>Must exporter</h1>
+        <h2>Enter your <a href=https://github.com/Dj-Frixz/export-mustapp-data?tab=readme-ov-file#export-your-must-data>Must Username</a> to get your data</h2>
+        <div class="input-group">
+            <input type="text" id="username" autocomplete="username" placeholder="Enter username" oninput="document.getElementById('btn').disabled = false;">
+        </div>
+        <button id="btn" class="btn" onclick="handleButton()" disabled>Search</button>
+        <div id="myProgress">
+            <div id="myBar"></div>
+        </div>
+        <p id="message"></p>
+    </div>
 </body>
 <script src="script.js"></script>
-<script>
-    async function handleButton() {
-        let username = document.getElementById('username').value;
-        let ids = await retrieveIMDbIDs(username);
-        document.getElementById('message').innerText = ids;
-    }
-</script>
 </html>

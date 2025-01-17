@@ -1,9 +1,45 @@
-async function retrieveIMDbIDs(username) {
+const msg = document.getElementById('message');
+
+async function handleButton() {
+    document.getElementById("btn").disabled = true;
+    let username = document.getElementById('username').value;
+    let ids = await getData(username);
+    msg.innerText += " ~ Successes "+ids[1]+"/"+ids[0]+ '\n' + ids[2].join(',\n');
+    document.getElementById("btn").disabled = false;
+}
+
+async function getData(username) {
+
+    const mustData = await exportMustData(username);
+
+    const options = {
+        method: 'GET',
+        headers: {
+            accept: 'application/json',
+            Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJiMWRiNjExNzc2OTdhMjA2MzBiMmMzMmQyMDA5ODY5YyIsIm5iZiI6MTcyOTAyMjAxOS4xODkwMywic3ViIjoiNjRjYTYxMTgwYjc0ZTkwMGFjNjZjMmE5Iiwic2NvcGVzIjpbImFwaV9yZWFkIl0sInZlcnNpb24iOjF9.rslpnPCxpGLXcdYfTyNAuL9Qbd9Zrhy0FjSZG-HRwTw'
+        }, // kindly don't steal this access token for your personal use, instead get one for free at https://www.themoviedb.org/settings/api
+    };
+
+    let IMDbIDs = [];
+    for (let i = 0; i < mustData.watched.length; i += 100) {
+        const subArray = mustData.watched.slice(i, i + 100);
+        const subIMDbIDs = await convertInfoToIMDbIDs2(subArray, options);
+        IMDbIDs = IMDbIDs.concat(subIMDbIDs);
+        msg.innerText = "Done " + (IMDbIDs.length) + "/" + mustData.watched.length;
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Pause for 1 second
+    }
+    
+    msg.innerText = "Done "+(IMDbIDs.length)+"/"+mustData.watched.length;
+
+    return [mustData.watched.length,IMDbIDs.length,IMDbIDs];
+}
+
+async function exportMustData(username) {
     
     const profileRes = await fetch(`https://mustapp.com/api/users/uri/${username}`);
     const profile = await profileRes.json();
-    const listIDs = profile.lists.watched; // the list of Must IDs
-    
+    const want = profile.lists.want; // the list of Must IDs for films in watchlist
+    const shows = profile.lists.shows; // the list of Must IDs for watched shows
     const headers = {
         "accept": "*/*",
         "accept-language": "en",
@@ -22,7 +58,14 @@ async function retrieveIMDbIDs(username) {
         "Referer": `https://mustapp.com/@${username}/watched`,
         "Referrer-Policy": "strict-origin-when-cross-origin"
     };
-    
+
+    return {
+        watched : await MustIDtoData(profile.lists.watched, profile.id, headers) // the list of watched films
+    }
+}
+
+async function MustIDtoData(listIDs, profileID, headers) {
+
     // slice IDs in chunks of size 100 to match Must limitations
     let IDs = [listIDs.slice(0,100)];
     for (let i = 100; i < listIDs.length; i+=100) {
@@ -30,75 +73,72 @@ async function retrieveIMDbIDs(username) {
     }
     
     // get full info from must ids
-    let list = await Promise.all(IDs.map(async ids => 
-        fetch(`https://mustapp.com/api/users/id/${profile.id}/products?embed=product`, {
+    let filmList= await Promise.all(IDs.map(async ids => 
+        fetch(`https://mustapp.com/api/users/id/${profileID}/products?embed=product`, {
             "headers": headers,
             "body": `{"ids":[${ids}]}`,
             "method": "POST"
         }).then(response => response.json())
     ));
-    // leaving the array in chunks
-            
-    const options = {
-        method: 'GET',
-        headers: {
-            accept: 'application/json',
-            Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJiMWRiNjExNzc2OTdhMjA2MzBiMmMzMmQyMDA5ODY5YyIsIm5iZiI6MTcyOTAyMjAxOS4xODkwMywic3ViIjoiNjRjYTYxMTgwYjc0ZTkwMGFjNjZjMmE5Iiwic2NvcGVzIjpbImFwaV9yZWFkIl0sInZlcnNpb24iOjF9.rslpnPCxpGLXcdYfTyNAuL9Qbd9Zrhy0FjSZG-HRwTw'
-        } // kindly don't steal this access token for your personal use, instead get one for free at https://www.themoviedb.org/settings/api
-    };
-            
-    // listDetailed.map(item => ({'title': item.product.title, 'date': item.product.release_date, 'runtime': item.product.runtime}))
-    
-    let IMDbList = [];
-    let errorList = [];
-    
-    // chop list in even smaller chunks
-    list = list.map(chunk => [chunk.slice(0,50),chunk.slice(50,100)]).flat();
-    
-    list.forEach(chunk => {
-        IMDbList.push(...chunk.map(item => 
-            fetch(`https://api.themoviedb.org/3/search/movie?query=${encodeURI(item.product.title)}&include_adult=true&language=en-US&primary_release_year=${item.product.release_date}&page=1`, options)
-                .then(response => response.json())
-                .then(response => fetch(`https://api.themoviedb.org/3/movie/${response.results.find(movie => movie.release_date == item.product.release_date)?.id || response.results[0].id || errorList.push(item.product.title)}/external_ids`, options))
-                .then(response => response.json())
-                .then(response => response.imdb_id)
-                .catch(err => console.error(err))
-        ));
-        setTimeout(()=>{}, 1000);
-    });
 
-    // let list2 = list.flat();
-    // list2.forEach(item => {
-    //     IMDbList.push(
-    //         fetch(`https://api.themoviedb.org/3/search/movie?query=${encodeURI(item.product.title)}&include_adult=true&language=en-US&primary_release_year=${item.product.release_date}&page=1`, options)
-    //             .then(response => response.json())
-    //             .then(response => fetch(`https://api.themoviedb.org/3/movie/${response.results.find(movie => movie.release_date == item.product.release_date)?.id || response.results[0].id}/external_ids`, options))
-    //             .then(response => response.json())
-    //             .then(response => response.imdb_id)
-    //             .catch(err => console.error(err))
-    //     );
-    //     setTimeout(()=>{}, 100);
-    // });
+    return filmList.flat()
+}
 
-    // list2.reduce((_,item) => (
-    //     fetch(`https://api.themoviedb.org/3/search/movie?query=${encodeURI(item.product.title)}&include_adult=true&language=en-US&primary_release_year=${item.product.release_date}&page=1`, options)
-    //         .then(response => response.json())
-    //         .then(response => fetch(`https://api.themoviedb.org/3/movie/${response.results.find(movie => movie.release_date == item.product.release_date)?.id || response.results[0].id}/external_ids`, options))
-    //         .then(response => response.json())
-    //         .then(response => IMDbList.push(response.imdb_id))
-    //         .then(setTimeout(()=>{}, 100))
-    //         .then(res => res)
-    //         .catch(err => console.error(err))
-    // ))
+async function* convertInfoToIMDbIDs(list, options) {
+    for (i=0; i<list.length; i++) {
+        let item = list[i];
+        let film = undefined;
+        window.timeEnded = false;
+        let Timeout = setTimeout(function () {window.timeEnded = true; window.errorList.push(item.product.title); console.log(item.product.title);},2000);
+        while (film==undefined && !(window.timeEnded)) {
+            let id;
+            try {
+                let res = await fetch(`https://api.themoviedb.org/3/search/movie?query=${encodeURI(item.product.title)}&include_adult=true&language=en-US&primary_release_year=${item.product.release_date}&page=1`, options);
+                let searched = await res.json();
+                id = searched.results.find(movie => movie.release_date == item.product.release_date)?.id || searched.results[0].id;
+            }
+            catch(err) {
+                console.log("Error 1: ",err);
+            }
+            try {
+                let res = await fetch(`https://api.themoviedb.org/3/movie/${id}/external_ids`, options);
+                film = await res.json();
+            }
+            catch(err) {
+                console.log("Error 2: ",err);
+            }
+        }
+        clearTimeout(Timeout);
+        yield film.imdb_id;
+    }
+}
 
-    // IMDbList = [];
-    // for (i=0; i<list2.length; i++) {
-    //     let item = list2[i];
-    //     let res = await fetch(`https://api.themoviedb.org/3/search/movie?query=${encodeURI(item.product.title)}&include_adult=true&language=en-US&primary_release_year=${item.product.release_date}&page=1`, options);
-    //     let j = await res.json();
-    //     IMDbList.push(j.results.find(movie => movie.release_date == item.product.release_date)?.id || j.results[0].id);
-    // }
+async function convertInfoToIMDbIDs2(list, options) {
+    return Promise.all(list.map(async (item) => {
+            let searched = await req1(item, options);
+            return await req2(searched, item, options);
+    }));
+        // setTimeout(()=>{}, 1000);
+}
 
-    IMDbList = await Promise.all(IMDbList);
-    return IMDbList
+async function req1 (item, options) {
+    while (true) {
+        let res = await fetch(`https://api.themoviedb.org/3/search/movie?query=${encodeURI(item.product.title)}&include_adult=true&language=en-US&primary_release_year=${item.product.release_date}&page=1`, options);
+        let searched = await res.json();
+        if (typeof searched !== 'undefined') {
+            // console.log(searched);
+            return searched;
+        }
+    }
+}
+
+async function req2 (response, item, options) {
+    while (true) {
+        let res = await fetch(`https://api.themoviedb.org/3/movie/${response.results.find(movie => movie.release_date == item.product.release_date)?.id || response.results[0].id || errorList.push(item.product.title)}/external_ids`, options);
+        let film = await res.json();
+        if (typeof film !== 'undefined') {
+            // console.log(film);
+            return film.imdb_id;
+        }
+    }
 }
