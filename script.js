@@ -9,7 +9,7 @@ async function handleButton() {
     let ids = await getData(username);
     msg.innerText += " ~ Successes "+ids[1]+"/"+ids[0]+ '\n';
     const csvContent = "data:text/csv;charset=utf-8," +
-                       "imdbID,Title,Year,Rating10,WatchedDate \n" +
+                       "imdbID,Title,Year,Rating10,WatchedDate,Review \n" +
                        ids[2].join('\n');
     // msg.innerText += csvContent;
     const encodedUri = encodeURI(csvContent);
