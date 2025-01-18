@@ -3,8 +3,19 @@ const msg = document.getElementById('message');
 async function handleButton() {
     document.getElementById("btn").disabled = true;
     let username = document.getElementById('username').value;
+    msg.innerText = "Fetching data for "+username+"...\n";
     let ids = await getData(username);
-    msg.innerText += " ~ Successes "+ids[1]+"/"+ids[0]+ '\n' + ids[2].join(',\n');
+    msg.innerText += " ~ Successes "+ids[1]+"/"+ids[0]+ '\n';
+    const csvContent = "data:text/csv;charset=utf-8," +
+                       "imdbID,Title,Year \n" +
+                       ids[2].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "imdb_ids.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
     document.getElementById("btn").disabled = false;
 }
 
@@ -21,8 +32,9 @@ async function getData(username) {
     };
 
     let IMDbIDs = [];
-    for (let i = 0; i < mustData.watched.length; i += 100) {
-        const subArray = mustData.watched.slice(i, i + 100);
+    let k = 50;
+    for (let i = 0; i < mustData.watched.length; i += k) {
+        const subArray = mustData.watched.slice(i, i + k);
         const subIMDbIDs = await convertInfoToIMDbIDs2(subArray, options);
         IMDbIDs = IMDbIDs.concat(subIMDbIDs);
         msg.innerText = "Done " + (IMDbIDs.length) + "/" + mustData.watched.length;
@@ -138,7 +150,7 @@ async function req2 (response, item, options) {
         let film = await res.json();
         if (typeof film !== 'undefined') {
             // console.log(film);
-            return film.imdb_id;
+            return `${film.imdb_id},"${item.product.title}",${item.product.release_date.substring(0, 4)}`; // IMDb ID, Title, Year
         }
     }
 }

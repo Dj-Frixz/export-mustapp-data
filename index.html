@@ -16,12 +16,9 @@
         <h1>Must exporter</h1>
         <h2>Enter your <a href=https://github.com/Dj-Frixz/export-mustapp-data?tab=readme-ov-file#export-your-must-data>Must Username</a> to get your data</h2>
         <div class="input-group">
-            <input type="text" id="username" autocomplete="username" placeholder="Enter username" oninput="document.getElementById('btn').disabled = false;">
+            <input type="text" id="username" autocomplete="username" placeholder="Enter username" oninput="document.getElementById('btn').hidden = false;">
         </div>
-        <button id="btn" class="btn" onclick="handleButton()" disabled>Search</button>
-        <div id="myProgress">
-            <div id="myBar"></div>
-        </div>
+        <button id="btn" class="btn" onclick="handleButton()" hidden>Export</button>
         <p id="message"></p>
     </div>
 </body>
