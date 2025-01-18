@@ -1,4 +1,6 @@
 const msg = document.getElementById('message');
+let headers = {};
+let profileID;
 
 async function handleButton() {
     document.getElementById("btn").disabled = true;
@@ -7,12 +9,13 @@ async function handleButton() {
     let ids = await getData(username);
     msg.innerText += " ~ Successes "+ids[1]+"/"+ids[0]+ '\n';
     const csvContent = "data:text/csv;charset=utf-8," +
-                       "imdbID,Title,Year \n" +
+                       "imdbID,Title,Year,Rating10,WatchedDate \n" +
                        ids[2].join('\n');
+    // msg.innerText += csvContent;
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "imdb_ids.csv");
+    link.setAttribute("download", "watched.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -50,9 +53,10 @@ async function exportMustData(username) {
     
     const profileRes = await fetch(`https://mustapp.com/api/users/uri/${username}`);
     const profile = await profileRes.json();
+    profileID = profile.id;
     const want = profile.lists.want; // the list of Must IDs for films in watchlist
     const shows = profile.lists.shows; // the list of Must IDs for watched shows
-    const headers = {
+    headers = {
         "accept": "*/*",
         "accept-language": "en",
         "bearer": "3a77331c-943f-44e8-b636-5deebcbe33b9",
@@ -72,11 +76,11 @@ async function exportMustData(username) {
     };
 
     return {
-        watched : await MustIDtoData(profile.lists.watched, profile.id, headers) // the list of watched films
+        watched : await MustIDtoData(profile.lists.watched, headers) // the list of watched films
     }
 }
 
-async function MustIDtoData(listIDs, profileID, headers) {
+async function MustIDtoData(listIDs, headers) {
 
     // slice IDs in chunks of size 100 to match Must limitations
     let IDs = [listIDs.slice(0,100)];
@@ -138,7 +142,6 @@ async function req1 (item, options) {
         let res = await fetch(`https://api.themoviedb.org/3/search/movie?query=${encodeURI(item.product.title)}&include_adult=true&language=en-US&primary_release_year=${item.product.release_date}&page=1`, options);
         let searched = await res.json();
         if (typeof searched !== 'undefined') {
-            // console.log(searched);
             return searched;
         }
     }
@@ -149,8 +152,18 @@ async function req2 (response, item, options) {
         let res = await fetch(`https://api.themoviedb.org/3/movie/${response.results.find(movie => movie.release_date == item.product.release_date)?.id || response.results[0].id || errorList.push(item.product.title)}/external_ids`, options);
         let film = await res.json();
         if (typeof film !== 'undefined') {
-            // console.log(film);
-            return `${film.imdb_id},"${item.product.title}",${item.product.release_date.substring(0, 4)}`; // IMDb ID, Title, Year
+            let review = '';
+            if (item.user_product_info.reviewed) {
+                res = await fetch(`https://mustapp.com/api/users/id/${profileID}/products?embed=review`, {
+                    "headers": headers,
+                    "body": `{"ids":[${item.product.id}]}`,
+                    "method": "POST"
+                });
+                review = await res.json();
+                review = '"' + review[0].user_product_info.review.body + '"';
+            }
+            // IMDb ID, Title, Year, Rating10, WatchedDate, Review
+            return `${film.imdb_id},"${item.product.title}",${item.product.release_date.substring(0,4)},${item.user_product_info.rate},${item.user_product_info.modified_at.substring(0,10)},${review}`;
         }
     }
 }
