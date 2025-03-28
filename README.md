@@ -5,7 +5,7 @@ https://dj-frixz.github.io/export-mustapp-data/
 
 ### ⚠ Work in progress: the site is available, however it may not function properly ⚠
 
-_(in my experience I just had to retry it some time to get all of the movies)_
+_(in my experience I just had to retry it some times to get all of the movies)_
 
 To get your Must username:
 - on mobile: go to profile and touch your profile photo to get to the settings, then copy the "Nickname" (not the "Name"!), or share via link and then copy the username without the "@";
