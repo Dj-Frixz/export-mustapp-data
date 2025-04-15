@@ -1,4 +1,5 @@
 const msg = document.getElementById('message');
+let errorList = [];
 let headers = {};
 let profileID;
 
