@@ -41,7 +41,7 @@ async function getData(username) {
         const subIMDbIDs = await convertInfoToIMDbIDs2(subArray, options);
         IMDbIDs = IMDbIDs.concat(subIMDbIDs);
         msg.innerText = "Done " + (IMDbIDs.length) + "/" + mustData.watched.length;
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Pause for 1 second
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Pause for 2 second
     }
     
     msg.innerText = "Done "+(IMDbIDs.length)+"/"+mustData.watched.length;
