@@ -149,7 +149,7 @@ async function req1 (item, options) {
 
 async function req2 (response, item, options) {
     while (true) {
-        let res = await fetch(`https://api.themoviedb.org/3/movie/${response.results.find(movie => movie.release_date == item.product.release_date)?.id || response.results[0].id || errorList.push(item.product.title)}/external_ids`, options);
+        let res = await fetch(`https://api.themoviedb.org/3/movie/${response.results.find(movie => movie.release_date == item.product.release_date)?.id || response.results[0]?.id || errorList.push(item.product.title)}/external_ids`, options);
         let film = await res.json();
         if (typeof film !== 'undefined') {
             let review = '';
