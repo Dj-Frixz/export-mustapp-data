@@ -166,6 +166,7 @@ async function req2 (response, item, options) {
             if (film.imdb_id == null || film.imdb_id == undefined) {
                 errorList.push([item.product.title, item.product.release_date]);
                 console.log(typeof(film.imdb_id),response.results);
+                console.log(response.results.find(movie => movie.release_date == item.product.release_date)?.id || response.results[0]?.id || errorList.push(item.product.title));
                 film.imdb_id = '';
             }
             // IMDb ID, Title, Year, Rating10, WatchedDate, Review
