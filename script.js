@@ -1,4 +1,5 @@
 const msg = document.getElementById('message');
+const msg2 = document.getElementById('missing');
 let errorList = [];
 let headers = {};
 let profileID;
@@ -44,9 +45,9 @@ async function getData(username) {
         msg.innerText = "Done " + (IMDbIDs.length) + "/" + mustData.watched.length;
         await new Promise(resolve => setTimeout(resolve, 2000)); // Pause for 2 second
     }
-    
-    msg.innerText = "Done "+(IMDbIDs.length)+"/"+mustData.watched.length;
-
+    const done = IMDbIDs.length - errorList.length;
+    msg.innerText = "Done " + done + "/" + mustData.watched.length;
+    msg2.innerText = "Missing: " + '\n' + errorList.join(",\n");
     return [mustData.watched.length,IMDbIDs.length,IMDbIDs];
 }
 
@@ -106,7 +107,7 @@ async function* convertInfoToIMDbIDs(list, options) {
         let item = list[i];
         let film = undefined;
         window.timeEnded = false;
-        let Timeout = setTimeout(function () {window.timeEnded = true; window.errorList.push(item.product.title); console.log(item.product.title);},2000);
+        let Timeout = setTimeout(function () {window.timeEnded = true; errorList.push(item.product.title); console.log(item.product.title);},2000);
         while (film==undefined && !(window.timeEnded)) {
             let id;
             try {
@@ -162,6 +163,9 @@ async function req2 (response, item, options) {
                 });
                 review = await res.json();
                 review = '"' + review[0].user_product_info.review.body + '"';
+            }
+            if (film.imdb_id == null) {
+                errorList.push(item.product.title);
             }
             // IMDb ID, Title, Year, Rating10, WatchedDate, Review
             return `${film.imdb_id},"${item.product.title}",${item.product.release_date.substring(0,4)},${item.user_product_info.rate},${item.user_product_info.modified_at.substring(0,10)},${review}`;
