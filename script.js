@@ -149,8 +149,10 @@ async function req1 (item, options) {
 }
 
 async function req2 (response, item, options) {
+    let id = await guessMovie(response);
     while (true) {
-        let res = await fetch(`https://api.themoviedb.org/3/movie/${response.results.find(movie => movie.release_date == item.product.release_date)?.id || response.results[0]?.id || errorList.push(item.product.title)}/external_ids`, options);
+        // response.results.find(movie => movie.release_date == item.product.release_date)?.id || response.results[0]?.id || errorList.push(item.product.title)
+        let res = await fetch(`https://api.themoviedb.org/3/movie/${id}/external_ids`, options);
         let film = await res.json();
         if (typeof film !== 'undefined') {
             let review = '';
@@ -172,5 +174,29 @@ async function req2 (response, item, options) {
             // IMDb ID, Title, Year, Rating10, WatchedDate, Review
             return `${film.imdb_id},"${item.product.title}",${item.product.release_date.substring(0,4)},${item.user_product_info.rate},${item.user_product_info.modified_at.substring(0,10)},${review}`;
         }
+    }
+}
+
+async function guessMovie(response) {
+    results = response.results.filter(movie => movie.release_date == item.product.release_date);
+    if (results.length == 0) {
+        results = response.results.filter(movie => movie.release_date.substring(0,4) == item.product.release_date.substring(0,4));
+        if (results.length == 0) {
+            results = response.results.filter(movie => movie.title == item.product.title);
+            if (results.length == 0) {
+                return response.results[0]?.id || errorList.push(item.product.title);
+            }
+        }
+    } else if (results.length > 1) {
+        let filtered = results.filter(movie => movie.title == item.product.title);
+        if (filtered.length == 0) {
+            filtered = results;
+        }
+        if (filtered.length > 1) {
+            return filtered.find(movie => movie.popularity == Math.max(...filtered.map(m => m.popularity)))?.id || errorList.push(item.product.title);
+        }
+        return filtered[0]?.id || errorList.push(item.product.title);
+    } else {
+        return results[0]?.id || errorList.push(item.product.title);
     }
 }
