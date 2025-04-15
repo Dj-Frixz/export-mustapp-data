@@ -9,10 +9,11 @@ async function handleButton() {
     let username = document.getElementById('username').value;
     msg.innerText = "Fetching data for "+username+"...\n";
     let ids = await getData(username);
-    msg.innerText += " ~ Successes "+ids[1]+"/"+ids[0]+ '\n';
+    msg.innerText += " ~ Errors " + errorList.length + "/" + ids[0] + '\n';
+    msg2.innerText = "Missing: " + '\n' + errorList.join(",\n");
     const csvContent = "data:text/csv;charset=utf-8," +
-                       "imdbID,Title,Year,Rating10,WatchedDate,Review \n" +
-                       ids[2].join('\n');
+    "imdbID,Title,Year,Rating10,WatchedDate,Review \n" +
+    ids[1].join('\n');
     // msg.innerText += csvContent;
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -45,10 +46,8 @@ async function getData(username) {
         msg.innerText = "Done " + (IMDbIDs.length) + "/" + mustData.watched.length;
         await new Promise(resolve => setTimeout(resolve, 2000)); // Pause for 2 second
     }
-    const done = IMDbIDs.length - errorList.length;
-    msg.innerText = "Done " + done + "/" + mustData.watched.length;
-    msg2.innerText = "Missing: " + '\n' + errorList.join(",\n");
-    return [mustData.watched.length,IMDbIDs.length,IMDbIDs];
+    msg.innerText = "Done " + (IMDbIDs.length) + "/" + mustData.watched.length;
+    return [mustData.watched.length,IMDbIDs];
 }
 
 async function exportMustData(username) {
@@ -165,7 +164,9 @@ async function req2 (response, item, options) {
                 review = '"' + review[0].user_product_info.review.body + '"';
             }
             if (film.imdb_id == null) {
-                errorList.push(item.product.title);
+                errorList.push([item.product.title, item.product.release_date]);
+                console.log(response.results);
+                film.imdb_id = '';
             }
             // IMDb ID, Title, Year, Rating10, WatchedDate, Review
             return `${film.imdb_id},"${item.product.title}",${item.product.release_date.substring(0,4)},${item.user_product_info.rate},${item.user_product_info.modified_at.substring(0,10)},${review}`;
