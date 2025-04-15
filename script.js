@@ -163,9 +163,9 @@ async function req2 (response, item, options) {
                 review = await res.json();
                 review = '"' + review[0].user_product_info.review.body + '"';
             }
-            if (film.imdb_id == null) {
+            if (film.imdb_id == null || film.imdb_id == undefined) {
                 errorList.push([item.product.title, item.product.release_date]);
-                console.log(response.results);
+                console.log(typeof(film.imdb_id),response.results);
                 film.imdb_id = '';
             }
             // IMDb ID, Title, Year, Rating10, WatchedDate, Review
