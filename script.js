@@ -149,7 +149,7 @@ async function req1 (item, options) {
 }
 
 async function req2 (response, item, options) {
-    let id = await guessMovie(response);
+    let id = await guessMovie(response,item);
     while (true) {
         // response.results.find(movie => movie.release_date == item.product.release_date)?.id || response.results[0]?.id || errorList.push(item.product.title)
         let res = await fetch(`https://api.themoviedb.org/3/movie/${id}/external_ids`, options);
@@ -177,7 +177,7 @@ async function req2 (response, item, options) {
     }
 }
 
-async function guessMovie(response) {
+async function guessMovie(response, item) {
     results = response.results.filter(movie => movie.release_date == item.product.release_date);
     if (results.length == 0) {
         results = response.results.filter(movie => movie.release_date.substring(0,4) == item.product.release_date.substring(0,4));
