@@ -119,12 +119,18 @@ async function convertInfoToIMDbIDs(list, options) {
  * @returns {Object} The TMDB API response object.
  */
 async function searchOnTMDB (item, options) {
+    let title = item.product.title;
     while (true) {
+        // I use year because it seems the search engine is more flexible with it and it is less prone to mismatch,
         // if it doesn't work, it could be useful retrying with primary_release_year instead of year
-        let res = await fetch(`https://api.themoviedb.org/3/search/movie?query=${encodeURI(item.product.title)}&include_adult=true&year=${item.product.release_date}&page=1`, options);
+        let res = await fetch(`https://api.themoviedb.org/3/search/movie?query=${encodeURI(title)}&include_adult=true&year=${item.product.release_date}&page=1`, options);
         let search = await res.json();
         if (typeof search !== 'undefined') {
-            return search;
+            if (search.results.length != 0 || item.product.title.length - title.length > 3) {
+                return search;
+            }
+            // This could be dangerous as it may hide mismatches, consider to remove.
+            title = title.substring(0, title.length - 1); // remove last character
         }
     }
 }
@@ -175,7 +181,6 @@ async function guessMovie(search, item) {
     if (results.length == 0) {
         results = search.results.filter(movie => movie.release_date == item.product.release_date);
         if (results.length == 0) {
-            console.log(item.product.title, search);
             return search.results[0]?.id || null; // null is the default value to avoid errors
         }
     } else if (results.length > 1) {
@@ -189,7 +194,6 @@ async function guessMovie(search, item) {
         }
         return filtered[0]?.id || null; // null is the default value to avoid errors
     } else {
-        console.log(item.product.title, search);
         return results[0]?.id || null; // null is the default value to avoid errors
     }
     // This is just the old one-line filter.
