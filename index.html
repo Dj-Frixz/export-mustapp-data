@@ -1,56 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Export your watched movies from Must to Letterboxd and IMDb</title>
-    <meta name="description" content="Must Exporter helps you export your watched movies from Must to popular platforms like Letterboxd and IMDb with ease, including your ratings, reviews, ..." />
-    <meta property="og:title" content="Must exporter" />
-    <meta property="og:site_name" content="Must exporter" />
-    <meta property="og:url" content="https://dj-frixz.github.io/export-mustapp-data/" />
-    <meta property="og:description" content="Easily export your watched films from Must to Letterboxd and IMDb" />
-    <meta property="og:image" content="data/images/logo.png" />
-    <meta property="og:type" content="website" />
-    <meta property="og:locale" content="en_US" />
-    <link rel="icon" type="image/png" href="data/favicon/favicon-96x96.png" sizes="96x96" />
-    <link rel="icon" type="image/svg+xml" href="data/favicon/favicon.svg" />
-    <link rel="shortcut icon" href="data/favicon/favicon.ico" />
-    <link rel="apple-touch-icon" sizes="180x180" href="data/favicon/apple-touch-icon.png" />
-    <meta name="apple-mobile-web-app-title" content="Must Exp" />
-    <link rel="manifest" href="data/favicon/site.webmanifest" />
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Export your watched movies from Must to Letterboxd and IMDb</title>
+  <meta name="description" content="Must Exporter helps you export your watched movies from Must to popular platforms like Letterboxd and IMDb with ease, including your ratings, reviews, ..." />
+  <meta property="og:title" content="Must exporter" />
+  <meta property="og:site_name" content="Must exporter" />
+  <meta property="og:url" content="https://dj-frixz.github.io/export-mustapp-data/" />
+  <meta property="og:description" content="Easily export your watched films from Must to Letterboxd and IMDb" />
+  <meta property="og:image" content="data/images/logo.png" />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="en_US" />
+  <link rel="icon" type="image/png" href="data/favicon/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="data/favicon/favicon.svg" />
+  <link rel="shortcut icon" href="data/favicon/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="data/favicon/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-title" content="Must Exp" />
+  <link rel="manifest" href="data/favicon/site.webmanifest" />
+  <link rel="stylesheet" href="styles.css">
 
-    <!-- Schema.org structured data -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "Must Exporter",
-      "url": "https://dj-frixz.github.io/export-mustapp-data/",
-      "description": "Must Exporter helps you export your watched movies from Must to popular platforms like Letterboxd and IMDb with ease, including your ratings, reviews, ...",
-      "publisher": {
-        "@type": "Organization",
-        "name": "Must Exporter"
-      },
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": "https://dj-frixz.github.io/export-mustapp-data/",
-        "query-input": "required name=search_term_string"
-      }
+  <!-- Schema.org structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Must Exporter",
+    "url": "https://dj-frixz.github.io/export-mustapp-data/",
+    "description": "Must Exporter helps you export your watched movies from Must to popular platforms like Letterboxd and IMDb with ease, including your ratings, reviews, ...",
+    "publisher": {
+      "@type": "Organization",
+      "name": "Must Exporter"
+    },
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://dj-frixz.github.io/export-mustapp-data/",
+      "query-input": "required name=search_term_string"
     }
-    </script>
+  }
+  </script>
 </head>
 <body>
-    <div class="container">
-        <h1>Must exporter</h1>
-        <h2>Enter your <a href="https://github.com/Dj-Frixz/export-mustapp-data/?tab=readme-ov-file#where-do-i-find-my-must-username">Must Username</a> to get your data</h2>
-        <div class="input-group">
-            <input type="text" id="username" autocomplete="username" placeholder="Enter username" oninput="document.getElementById('btn').hidden = false;">
-        </div>
-        <button id="btn" type="button" onclick="handleButton()" hidden>Export</button>
-        <p id="message"></p>
-        <p id="missing" class="warning"></p>
-    </div>
+  <h1>Must exporter</h1>
+  <h2>Enter your <a href="https://github.com/Dj-Frixz/export-mustapp-data/?tab=readme-ov-file#where-do-i-find-my-must-username">Must Username</a> to get your data</h2>
+  <div class="input-group">
+      <input type="text" id="username" autocomplete="username" placeholder="Enter username" oninput="document.getElementById('btn').hidden = false;">
+  </div>
+  <button id="btn" type="button" onclick="handleButton()" hidden>Export</button>
+  <p id="message"></p>
+  <p id="missing" class="warning"></p>
+  <div class="tmdb-api">
+    <p>This website uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.</p>
+  </div>
 </body>
 <script src="script.js?v=0.19"></script>
 </html>

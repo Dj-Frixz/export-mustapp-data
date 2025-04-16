@@ -9,3 +9,8 @@ button {
     color: green;
     background-color: black;
 }
+.tmdb-api {
+    position: absolute;
+    bottom: 5px;
+    font-size: x-small;
+}
