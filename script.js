@@ -10,7 +10,14 @@ async function handleButton() {
     msg.innerText = "Fetching data for "+username+"...\n";
     let ids = await getData(username);
     msg.innerText += " ~ Failed " + errorList.length + "/" + ids[0] + '\n';
-    msg2.innerText = "Missing: " + '\n' + errorList.join(",\n");
+    if (errorList.length == 0) {
+        msg2.classList.add("success");
+        msg2.innerText = "All movies found!\n";
+    } else {
+        msg2.classList.remove("success");
+        msg2.innerText = "Missing: " + '\n' + errorList.join(",\n");
+    }
+    msg.innerText += "Generating CSV...\n";
     const csvContent = "data:text/csv;charset=utf-8," +
     "imdbID,Title,Year,Rating10,WatchedDate,Review \n" +
     ids[1].join('\n');

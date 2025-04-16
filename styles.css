@@ -1,3 +1,11 @@
 button {
     margin: 0.5em;
 }
+.warning {
+    color: red;
+    background-color: black;
+}
+.success {
+    color: green;
+    background-color: black;
+}

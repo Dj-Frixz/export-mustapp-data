@@ -47,10 +47,10 @@
         <div class="input-group">
             <input type="text" id="username" autocomplete="username" placeholder="Enter username" oninput="document.getElementById('btn').hidden = false;">
         </div>
-        <button id="btn" class="btn" onclick="handleButton()" hidden>Export</button>
+        <button id="btn" type="button" onclick="handleButton()" hidden>Export</button>
         <p id="message"></p>
-        <p id="missing"></p>
+        <p id="missing" class="warning"></p>
     </div>
 </body>
-<script src="script.js?v=0.17"></script>
+<script src="script.js?v=0.18"></script>
 </html>
