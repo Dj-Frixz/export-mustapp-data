@@ -9,7 +9,7 @@ async function handleButton() {
     let username = document.getElementById('username').value;
     msg.innerText = "Fetching data for "+username+"...\n";
     let ids = await getData(username);
-    msg.innerText += " ~ Errors " + errorList.length + "/" + ids[0] + '\n';
+    msg.innerText += " ~ Failed " + errorList.length + "/" + ids[0] + '\n';
     msg2.innerText = "Missing: " + '\n' + errorList.join(",\n");
     const csvContent = "data:text/csv;charset=utf-8," +
     "imdbID,Title,Year,Rating10,WatchedDate,Review \n" +
@@ -43,10 +43,10 @@ async function getData(username) {
         const subArray = mustData.watched.slice(i, i + k);
         const subIMDbIDs = await convertInfoToIMDbIDs2(subArray, options);
         IMDbIDs = IMDbIDs.concat(subIMDbIDs);
-        msg.innerText = "Done " + (IMDbIDs.length) + "/" + mustData.watched.length;
+        msg.innerText = "Processed " + (IMDbIDs.length) + "/" + mustData.watched.length;
         await new Promise(resolve => setTimeout(resolve, 2000)); // Pause for 2 second
     }
-    msg.innerText = "Done " + (IMDbIDs.length) + "/" + mustData.watched.length;
+    msg.innerText = "Processed " + (IMDbIDs.length) + "/" + mustData.watched.length;
     return [mustData.watched.length,IMDbIDs];
 }
 
