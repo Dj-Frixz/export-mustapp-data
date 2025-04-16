@@ -41,7 +41,7 @@ async function getData(username) {
     let k = 50;
     for (let i = 0; i < mustData.watched.length; i += k) {
         const subArray = mustData.watched.slice(i, i + k);
-        const subIMDbIDs = await convertInfoToIMDbIDs2(subArray, options);
+        const subIMDbIDs = await convertInfoToIMDbIDs(subArray, options);
         IMDbIDs = IMDbIDs.concat(subIMDbIDs);
         msg.innerText = "Processed " + (IMDbIDs.length) + "/" + mustData.watched.length;
         await new Promise(resolve => setTimeout(resolve, 2000)); // Pause for 2 second
@@ -101,57 +101,43 @@ async function MustIDtoData(listIDs, headers) {
     return filmList.flat()
 }
 
-async function* convertInfoToIMDbIDs(list, options) {
-    for (i=0; i<list.length; i++) {
-        let item = list[i];
-        let film = undefined;
-        window.timeEnded = false;
-        let Timeout = setTimeout(function () {window.timeEnded = true; errorList.push(item.product.title); console.log(item.product.title);},2000);
-        while (film==undefined && !(window.timeEnded)) {
-            let id;
-            try {
-                let res = await fetch(`https://api.themoviedb.org/3/search/movie?query=${encodeURI(item.product.title)}&include_adult=true&language=en-US&primary_release_year=${item.product.release_date}&page=1`, options);
-                let searched = await res.json();
-                id = searched.results.find(movie => movie.release_date == item.product.release_date)?.id || searched.results[0].id;
-            }
-            catch(err) {
-                console.log("Error 1: ",err);
-            }
-            try {
-                let res = await fetch(`https://api.themoviedb.org/3/movie/${id}/external_ids`, options);
-                film = await res.json();
-            }
-            catch(err) {
-                console.log("Error 2: ",err);
-            }
-        }
-        clearTimeout(Timeout);
-        yield film.imdb_id;
-    }
-}
-
-async function convertInfoToIMDbIDs2(list, options) {
+async function convertInfoToIMDbIDs(list, options) {
     return Promise.all(list.map(async (item) => {
-            let searched = await req1(item, options);
-            return await req2(searched, item, options);
+            let search = await searchOnTMDB(item, options);
+            let id = search.results[0]?.id || errorList.push(item.product.title);
+            if (search.results.length > 1) {
+                id = await guessMovie(search, item);
+            }
+            return getIMDBid(id, item, options);
     }));
-        // setTimeout(()=>{}, 1000);
 }
 
-async function req1 (item, options) {
+/**
+ * Search for a movie on TMDB using the title and year from the MustApp item.
+ * @param {Object} item - The MustApp item object.
+ * @param {Object} options - The options for the TMDB API request.
+ * @returns {Object} The TMDB API response object.
+ */
+async function searchOnTMDB (item, options) {
     while (true) {
+        // if it doesn't work, it could be useful retrying with primary_release_year instead of year
         let res = await fetch(`https://api.themoviedb.org/3/search/movie?query=${encodeURI(item.product.title)}&include_adult=true&year=${item.product.release_date}&page=1`, options);
-        let searched = await res.json();
-        if (typeof searched !== 'undefined') {
-            return searched;
+        let search = await res.json();
+        if (typeof search !== 'undefined') {
+            return search;
         }
     }
 }
 
-async function req2 (response, item, options) {
-    let id = await guessMovie(response,item);
+/**
+ * Get the IMDb ID of a movie from its TMDb ID.
+ * @param {Int} id - The TMDb ID of the movie.
+ * @param {Object} item - The MustApp item object.
+ * @param {Object} options - The options for the TMDB API request.
+ * @returns {String} A string containing the IMDb ID, title, year, rating, watched date, and review.
+ */
+async function getIMDBid (id, item, options) {
     while (true) {
-        // response.results.find(movie => movie.release_date == item.product.release_date)?.id || response.results[0]?.id || errorList.push(item.product.title)
         let res = await fetch(`https://api.themoviedb.org/3/movie/${id}/external_ids`, options);
         let film = await res.json();
         if (typeof film !== 'undefined') {
@@ -167,8 +153,6 @@ async function req2 (response, item, options) {
             }
             if (film.imdb_id == null || film.imdb_id == undefined) {
                 errorList.push([item.product.title, item.product.release_date]);
-                console.log(typeof(film.imdb_id),response.results);
-                console.log(response.results.find(movie => movie.release_date == item.product.release_date)?.id || response.results[0]?.id || errorList.push(item.product.title));
                 film.imdb_id = '';
             }
             // IMDb ID, Title, Year, Rating10, WatchedDate, Review
@@ -177,27 +161,35 @@ async function req2 (response, item, options) {
     }
 }
 
-async function guessMovie(response, item) {
-    results = response.results.filter(movie => movie.release_date == item.product.release_date);
+/**
+ * Tries to fix the horrible TMDB search algorithm through a series of filters on the results.
+ * @param {Object} search - The TMDB API response object.
+ * @param {Object} item - The MustApp item object.
+ * @returns {Int|undefined} The TMDb ID of the (guessed) movie.
+ */
+async function guessMovie(search, item) {
+    // The first check is title exact match, as it is the most reliable.
+    // If there are no results, we try to match the release date.
+    // Year match is skipped as it is highly unreliable.
+    results = search.results.filter(movie => movie.title == item.product.title);
     if (results.length == 0) {
-        results = response.results.filter(movie => movie.release_date.substring(0,4) == item.product.release_date.substring(0,4));
+        results = search.results.filter(movie => movie.release_date == item.product.release_date);
         if (results.length == 0) {
-            results = response.results.filter(movie => movie.title == item.product.title);
-            if (results.length == 0) {
-                return response.results[0]?.id || errorList.push(item.product.title);
-            }
+            return search.results[0]?.id || errorList.push(item.product.title);
         }
     } else if (results.length > 1) {
-        let filtered = results.filter(movie => movie.title == item.product.title);
+        let filtered = results.filter(movie => movie.release_date == item.product.release_date);
         if (filtered.length == 0) {
             filtered = results;
         }
         if (filtered.length > 1) {
+            // Filters out fakes or duplicates (yes, they can appear in the wrong order...).
             return filtered.find(movie => movie.popularity == Math.max(...filtered.map(m => m.popularity)))?.id || errorList.push(item.product.title);
         }
         return filtered[0]?.id || errorList.push(item.product.title);
     } else {
-        return response.results.find(movie => movie.release_date == item.product.release_date)?.id || response.results[0]?.id || errorList.push(item.product.title);
+        return results[0]?.id || errorList.push(item.product.title);
     }
-    return response.results.find(movie => movie.release_date == item.product.release_date)?.id || response.results[0]?.id || errorList.push(item.product.title); // default value to avoid errors
+    // This is just the old one-line filter.
+    // return search.results.find(movie => movie.release_date == item.product.release_date)?.id || search.results[0]?.id || errorList.push(item.product.title); // default value to avoid errors
 }
