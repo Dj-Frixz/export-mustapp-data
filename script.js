@@ -126,10 +126,11 @@ async function searchOnTMDB (item, options) {
         let res = await fetch(`https://api.themoviedb.org/3/search/movie?query=${encodeURI(title)}&include_adult=true&year=${item.product.release_date}&page=1`, options);
         let search = await res.json();
         if (typeof search !== 'undefined') {
+            // Assuming a title with less than 4 characters has to return some results.
             if (search.results.length != 0 || item.product.title.length - title.length > 3) {
                 return search;
             }
-            // This could be dangerous as it may hide mismatches, consider to remove.
+            // This is a bit dangerous as it may hide mismatches, consider to remove.
             title = title.substring(0, title.length - 1); // remove last character
         }
     }
