@@ -1,17 +1,31 @@
 # Export your Must movies
-How to export your Must watched movies (soon ratings also)
+Export your Must watched movies (and ratings, and reviews, and so on) on a CSV you can then import elsewhere.
 
-https://dj-frixz.github.io/export-mustapp-data/
+At the moment the only officially supported export format is for __[Letterboxd](https://letterboxd.com/import/)__, to import in other platform you might have to modify the file ([look at some suggestions](#what-do-i-do-with-the-file-downloaded)).
+Assuming you are importing on Letterboxd the movies will also be added to your diary, if you choose so in the Letterboxd importer. 
 
-### ⚠ Work in progress: the site is available, however it may not function properly ⚠
+### ✅ Now working (tested on 16-04-2025)
+_(there might be issues if there are too many concurrent users)_
 
-_(in my experience I just had to retry it some times to get all of the movies)_
+## Installation
+Zero installations, just go to the [website](https://dj-frixz.github.io/export-mustapp-data/)!
 
+## Usage
+[Click here](https://dj-frixz.github.io/export-mustapp-data/) to enter the site, insert your [Must username](#where-do-i-find-my-must-username) (without the _@_!) and click _Export_. Wait for it to complete the process and the CSV with all your movies and ratings should be automatically downloaded to your device!
+
+### Where do I find my Must username?
 To get your Must username:
-- on mobile: go to profile and touch your profile photo to get to the settings, then copy the "Nickname" (not the "Name"!), or share via link and then copy the username without the "@";
-- on PC: simply login to <https://mustapp.com> and copy your username in the address bar without the "@" (ex. username in mustapp.com/@username)
+- **on mobile**: go to profile and touch your profile photo to get to the settings, then copy the "Nickname" (not the "Name"!), or share via link and then copy the username without the "@";
+- **on PC**: simply login to <https://mustapp.com> and copy your username in the address bar without the "@" (ex. _johnwick_ in mustapp.com/@johnwick)
 
-At the moment the site is extremely bare bones and it doesn't have a loading animation so you have to wait patiently for less than a minute for the result,assuming you have inserted the right username.
+The site doesn't warn you if the user hasn't been found, so check carefully in the case it doesn't work.
 
-## The site only gives IMDB IDS
-Copy the full list and import it wherever you want. To import it in an IMDb list on your account I'd suggest using Tampermonkey and the IMDb importer script you can find online
+### What do I do with the file downloaded?
+If you want to import your watched movies on Letterboxd, go [here](https://letterboxd.com/import/) and upload there your downloaded file.
+
+At the moment importing on other platforms is not officially supported, so it might or might not work to try uploading the file on other importers. In the case it doesn't get accepted you may want to modify the CSV or extract the IMDB IDs, as those IDs can be used to import movies on almost every platform.
+
+If you want to import your watched movies and reviews on IMDb I suggest using Tampermonkey and the [IMDb importer script](https://greasyfork.org/en/scripts/23584-imdb-list-importer) (I don't own any of this, so please refer to them for any help).
+
+## Feature requests
+Write feature requests in the [issues](https://github.com/Dj-Frixz/export-mustapp-data/issues) of this repository, any feedback is appreciated!
