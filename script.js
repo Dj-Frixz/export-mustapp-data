@@ -175,7 +175,8 @@ async function guessMovie(search, item) {
     if (results.length == 0) {
         results = search.results.filter(movie => movie.release_date == item.product.release_date);
         if (results.length == 0) {
-            return search.results[0]?.id || errorList.push(item.product.title);
+            console.log(item.product.title, search);
+            return search.results[0]?.id || null; // null is the default value to avoid errors
         }
     } else if (results.length > 1) {
         let filtered = results.filter(movie => movie.release_date == item.product.release_date);
@@ -186,9 +187,10 @@ async function guessMovie(search, item) {
             // Filters out fakes or duplicates (yes, they can appear in the wrong order...).
             return filtered.find(movie => movie.popularity == Math.max(...filtered.map(m => m.popularity)))?.id || errorList.push(item.product.title);
         }
-        return filtered[0]?.id || errorList.push(item.product.title);
+        return filtered[0]?.id || null; // null is the default value to avoid errors
     } else {
-        return results[0]?.id || errorList.push(item.product.title);
+        console.log(item.product.title, search);
+        return results[0]?.id || null; // null is the default value to avoid errors
     }
     // This is just the old one-line filter.
     // return search.results.find(movie => movie.release_date == item.product.release_date)?.id || search.results[0]?.id || errorList.push(item.product.title); // default value to avoid errors
