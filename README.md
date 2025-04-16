@@ -2,7 +2,7 @@
 Export your Must watched movies (and ratings, and reviews, and so on) on a CSV you can then import elsewhere.
 
 At the moment the only officially supported export format is for __[Letterboxd](https://letterboxd.com/import/)__, to import in other platform you might have to modify the file ([look at some suggestions](#what-do-i-do-with-the-file-downloaded)).
-Assuming you are importing on Letterboxd the movies will also be added to your diary, if you choose so in the Letterboxd importer. 
+Assuming you are importing on Letterboxd the movies will also be added to your diary, if you choose to do so in the Letterboxd importer. 
 
 ### ✅ Now working (tested on 16-04-2025)
 _(there might be issues if there are too many concurrent users)_
