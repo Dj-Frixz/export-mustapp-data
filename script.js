@@ -26,9 +26,10 @@ async function handleButton() {
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
     link.setAttribute("download", "watched.csv");
-    document.body.appendChild(link);
+    link.innerText = "Click here if the download doesn't start automatically";
+    msg.innerText += "File ready!\n\n";
+    msg.appendChild(link);
     link.click();
-    document.body.removeChild(link);
     document.getElementById("btn").disabled = false;
 }
 
