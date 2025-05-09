@@ -16,8 +16,6 @@ async function handleButton() {
     let username = document.getElementById('username').value;
     msg.innerText = "Fetching data for "+username+"...\n";
     let ids = await getData(username);
-    msg.innerText += " ~ Failed " + errorList.length + "/" + ids[0] + 
-        " ~ Unclear " + warnList.length + '\n';
     if (errorList.length == 0 && warnList.length == 0) {
         msg2.classList.add("success");
         msg2.innerText = "All movies found!\n";
@@ -33,20 +31,24 @@ async function handleButton() {
             "\n(If you're migrating to Letterboxd don't worry the importer will try to find them by itself.\n" +
             "Otherwise, you might want to check the CSV file if you need the IMDB ids.)\n\n - " + errorList.join("\n - ");
     }
-    msg.innerText += "Generating CSV...\n";
+    msg.innerText += "Generating CSVs...\n";
+    generateCSV(ids.want, username + "_want", "imdbID,Title,Year,Rating10,WatchedDate,Review");
+    generateCSV(ids.watched, username + "_watched", "imdbID,Title,Year,Rating10,WatchedDate,Review");
+    document.getElementById("btn").disabled = false;
+}
+
+function generateCSV(content, filename, _headers) {
     const csvContent = "data:text/csv;charset=utf-8," +
-    "imdbID,Title,Year,Rating10,WatchedDate,Review \n" +
-    ids[1].join('\n');
-    // msg.innerText += csvContent;
+    _headers + " \n" +
+    content.join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "watched.csv");
-    link.innerText = "Click here if the download doesn't start automatically";
-    msg.innerText += "File ready!\n\n";
+    link.setAttribute("download", filename + ".csv");
+    link.style.display = "block";
+    link.innerText = `Click here if the download doesn't start automatically (${filename}.csv)`;
     msg.appendChild(link);
     link.click();
-    document.getElementById("btn").disabled = false;
 }
 
 async function getData(username) {
@@ -61,17 +63,22 @@ async function getData(username) {
         }, // kindly don't steal this access token for your personal use, instead get one for free at https://www.themoviedb.org/settings/api
     };
 
-    let IMDbIDs = [];
+    let IMDbIDs = {want: [], watched: []};
+    n = mustData.want.length + mustData.watched.length;
     let k = 50;
-    for (let i = 0; i < mustData.watched.length; i += k) {
-        const subArray = mustData.watched.slice(i, i + k);
-        const subIMDbIDs = await convertInfoToIMDbIDs(subArray, options);
-        IMDbIDs = IMDbIDs.concat(subIMDbIDs);
-        msg.innerText = "Processed " + (IMDbIDs.length) + "/" + mustData.watched.length;
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Pause for 2 second
+    for (let list_index of Object.keys(mustData)) {
+        for (let i = 0; i < mustData[list_index].length; i += k) {
+            const subArray = mustData[list_index].slice(i, i + k);
+            const subIMDbIDs = await convertInfoToIMDbIDs(subArray, options);
+            IMDbIDs[list_index] = IMDbIDs[list_index].concat(subIMDbIDs);
+            msg.innerText = "Processed " + (IMDbIDs[list_index].length) + "/" + mustData[list_index].length + ` (${list_index})\n`;
+            await new Promise(resolve => setTimeout(resolve, 2000)); // Pause for 2 second
+        }
     }
-    msg.innerText = "Processed " + (IMDbIDs.length) + "/" + mustData.watched.length;
-    return [mustData.watched.length,IMDbIDs];
+    msg.innerText = "Processed " + (IMDbIDs.want.length + IMDbIDs.watched.length) + "/" + n + " (total)\n";
+    msg.innerText += " ~ Failed " + errorList.length + "/" + n + 
+        " ~ Unclear " + warnList.length + '\n';
+    return IMDbIDs;
 }
 
 async function exportMustData(username) {
@@ -79,7 +86,6 @@ async function exportMustData(username) {
     const profileRes = await fetch(`https://mustapp.com/api/users/uri/${username}`);
     const profile = await profileRes.json();
     profileID = profile.id;
-    const want = profile.lists.want; // the list of Must IDs for films in watchlist
     const shows = profile.lists.shows; // the list of Must IDs for watched shows
     headers = {
         "accept": "*/*",
@@ -101,6 +107,7 @@ async function exportMustData(username) {
     };
 
     return {
+        want : await MustIDtoData(profile.lists.want, headers), // the list of Must IDs for films in watchlist
         watched : await MustIDtoData(profile.lists.watched, headers) // the list of watched films
     }
 }
@@ -135,7 +142,7 @@ async function convertInfoToIMDbIDs(list, options) {
         let search = await searchOnTMDB(item, options);
         if (!search || search.results.length == 0) {
             errorList.push([item.product.title, item.product.release_date]);
-            return `,"${item.product.title}",${item.product.release_date.substring(0,4)},${item.user_product_info.rate},${item.user_product_info.modified_at.substring(0,10)},${review}`;
+            return `,"${item.product.title}",${item.product.release_date.substring(0,4)},${item.user_product_info.rate},${item.user_product_info.modified_at.substring(0,10)},${review ?? ''}`;
         }
         let id = search.results[0]?.id || (errorList.push([item.product.title, item.product.release_date]) ? null : null);
         if (search.results.length > 1) {
