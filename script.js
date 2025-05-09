@@ -5,6 +5,11 @@ let warnList = [];
 let headers = {};
 let profileID;
 
+function toggleGIF(gif) {
+    const GIF = document.querySelector(gif);
+    GIF.style.display = GIF.style.display === 'none' ? 'block' : 'none';
+}
+
 async function handleButton() {
     msg2.innerText = "";
     document.getElementById("btn").disabled = true;
