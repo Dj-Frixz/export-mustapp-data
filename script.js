@@ -1,21 +1,32 @@
 const msg = document.getElementById('message');
 const msg2 = document.getElementById('missing');
 let errorList = [];
+let warnList = [];
 let headers = {};
 let profileID;
 
 async function handleButton() {
+    msg2.innerText = "";
     document.getElementById("btn").disabled = true;
     let username = document.getElementById('username').value;
     msg.innerText = "Fetching data for "+username+"...\n";
     let ids = await getData(username);
-    msg.innerText += " ~ Failed " + errorList.length + "/" + ids[0] + '\n';
-    if (errorList.length == 0) {
+    msg.innerText += " ~ Failed " + errorList.length + "/" + ids[0] + 
+        " ~ Unclear " + warnList.length + '\n';
+    if (errorList.length == 0 && warnList.length == 0) {
         msg2.classList.add("success");
         msg2.innerText = "All movies found!\n";
     } else {
         msg2.classList.remove("success");
-        msg2.innerText = "Missing: " + '\n' + errorList.join(",\n");
+        if (warnList.length > 0) {
+            msg2.innerText = "These movies might be wrong:\n" +
+                "(If you're migrating to Letterboxd just verify them during the import process.\n" +
+                "Otherwise, you might want to check the CSV file.)\n\n - " +
+                warnList.join("\n - ") + "\n\n";
+        }
+        msg2.innerText += "These movies weren't found: " +
+            "\n(If you're migrating to Letterboxd don't worry the importer will try to find them by itself.\n" +
+            "Otherwise, you might want to check the CSV file if you need the IMDB ids.)\n\n - " + errorList.join("\n - ");
     }
     msg.innerText += "Generating CSV...\n";
     const csvContent = "data:text/csv;charset=utf-8," +
@@ -111,12 +122,21 @@ async function MustIDtoData(listIDs, headers) {
 
 async function convertInfoToIMDbIDs(list, options) {
     return Promise.all(list.map(async (item) => {
-            let search = await searchOnTMDB(item, options);
-            let id = search.results[0]?.id || errorList.push(item.product.title);
-            if (search.results.length > 1) {
-                id = await guessMovie(search, item);
-            }
-            return getIMDBid(id, item, options);
+        if (!item.product.release_date) {
+            item.product.release_date = '';
+            warnList.push(item.product.title);
+        }
+        const review = await getReview(item);
+        let search = await searchOnTMDB(item, options);
+        if (!search || search.results.length == 0) {
+            errorList.push([item.product.title, item.product.release_date]);
+            return `,"${item.product.title}",${item.product.release_date.substring(0,4)},${item.user_product_info.rate},${item.user_product_info.modified_at.substring(0,10)},${review}`;
+        }
+        let id = search.results[0]?.id || (errorList.push([item.product.title, item.product.release_date]) ? null : null);
+        if (search.results.length > 1) {
+            id = await guessMovie(search, item);
+        }
+        return getIMDBid(id, item, options, review);
     }));
 }
 
@@ -151,21 +171,11 @@ async function searchOnTMDB (item, options) {
  * @param {Object} options - The options for the TMDB API request.
  * @returns {String} A string containing the IMDb ID, title, year, rating, watched date, and review.
  */
-async function getIMDBid (id, item, options) {
+async function getIMDBid (id, item, options, review) {
     while (true) {
         let res = await fetch(`https://api.themoviedb.org/3/movie/${id}/external_ids`, options);
         let film = await res.json();
         if (typeof film !== 'undefined') {
-            let review = '';
-            if (item.user_product_info.reviewed) {
-                res = await fetch(`https://mustapp.com/api/users/id/${profileID}/products?embed=review`, {
-                    "headers": headers,
-                    "body": `{"ids":[${item.product.id}]}`,
-                    "method": "POST"
-                });
-                review = await res.json();
-                review = '"' + review[0].user_product_info.review.body + '"';
-            }
             if (film.imdb_id == null || film.imdb_id == undefined) {
                 errorList.push([item.product.title, item.product.release_date]);
                 film.imdb_id = '';
@@ -174,6 +184,20 @@ async function getIMDBid (id, item, options) {
             return `${film.imdb_id},"${item.product.title}",${item.product.release_date.substring(0,4)},${item.user_product_info.rate},${item.user_product_info.modified_at.substring(0,10)},${review}`;
         }
     }
+}
+
+async function getReview(item) {
+    let review = '';
+    if (item.user_product_info.reviewed) {
+        res = await fetch(`https://mustapp.com/api/users/id/${profileID}/products?embed=review`, {
+            "headers": headers,
+            "body": `{"ids":[${item.product.id}]}`,
+            "method": "POST"
+        });
+        review = await res.json();
+        review = '"' + review[0].user_product_info.review.body + '"';
+    }
+    return review;
 }
 
 /**
@@ -199,12 +223,12 @@ async function guessMovie(search, item) {
         }
         if (filtered.length > 1) {
             // Filters out fakes or duplicates (yes, they can appear in the wrong order...).
-            return filtered.find(movie => movie.popularity == Math.max(...filtered.map(m => m.popularity)))?.id || errorList.push(item.product.title);
+            return filtered.find(movie => movie.popularity == Math.max(...filtered.map(m => m.popularity)))?.id || (errorList.push([item.product.title, item.product.release_date]) ? null : null);
         }
         return filtered[0]?.id || null; // null is the default value to avoid errors
     } else {
         return results[0]?.id || null; // null is the default value to avoid errors
     }
     // This is just the old one-line filter.
-    // return search.results.find(movie => movie.release_date == item.product.release_date)?.id || search.results[0]?.id || errorList.push(item.product.title); // default value to avoid errors
+    // return search.results.find(movie => movie.release_date == item.product.release_date)?.id || search.results[0]?.id || errorList.push([item.product.title, item.product.release_date]); // default value to avoid errors
 }
