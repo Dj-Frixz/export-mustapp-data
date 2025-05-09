@@ -1,9 +1,6 @@
 const msg = document.getElementById('message');
 const msg2 = document.getElementById('missing');
-let errorList = [];
-let warnList = [];
 let headers = {};
-let profileID;
 
 function toggleGIF(gif) {
     const GIF = document.querySelector(gif);
@@ -11,6 +8,9 @@ function toggleGIF(gif) {
 }
 
 async function handleButton() {
+    window.errorList = [];
+    window.warnList = [];
+    window.profileID = null;
     msg2.innerText = "";
     document.getElementById("btn").disabled = true;
     let username = document.getElementById('username').value;
@@ -153,14 +153,19 @@ async function convertInfoToIMDbIDs(list, options) {
  */
 async function searchOnTMDB (item, options) {
     let title = item.product.title;
-    while (true) {
+    for (const i = 0; i < 3; i++) {
         // I use year because it seems the search engine is more flexible with it and it is less prone to mismatch,
         // if it doesn't work, it could be useful retrying with primary_release_year instead of year
         let res = await fetch(`https://api.themoviedb.org/3/search/movie?query=${encodeURI(title)}&include_adult=true&year=${item.product.release_date}&page=1`, options);
         let search = await res.json();
         if (typeof search !== 'undefined') {
+            if (search.results.length == 0) {
+                // If there are no results, we try to match the release date.
+                res = await fetch(`https://api.themoviedb.org/3/search/movie?query=${encodeURI(title)}&include_adult=true&page=1`, options);
+                search = await res.json();
+            }
             // Assuming a title with less than 4 characters has to return some results.
-            if (search.results.length != 0 || item.product.title.length - title.length > 3) {
+            if (search.results.length != 0) {
                 return search;
             }
             // This is a bit dangerous as it may hide mismatches, consider to remove.

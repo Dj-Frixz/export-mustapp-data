@@ -38,6 +38,7 @@ footer {
     background-color: black;
     max-height: 50vh;
     overflow: auto;
+    text-align: justify;
 }
 .success {
     color: green;
