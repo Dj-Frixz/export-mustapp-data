@@ -153,7 +153,7 @@ async function convertInfoToIMDbIDs(list, options) {
  */
 async function searchOnTMDB (item, options) {
     let title = item.product.title;
-    for (const i = 0; i < 3; i++) {
+    for (let i = 0; i < 3; i++) {
         // I use year because it seems the search engine is more flexible with it and it is less prone to mismatch,
         // if it doesn't work, it could be useful retrying with primary_release_year instead of year
         let res = await fetch(`https://api.themoviedb.org/3/search/movie?query=${encodeURI(title)}&include_adult=true&year=${item.product.release_date}&page=1`, options);
