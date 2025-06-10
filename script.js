@@ -1,6 +1,7 @@
 const msg = document.getElementById('message');
 const msg2 = document.getElementById('missing');
 let headers = {};
+let ind = 0;
 
 function toggleGIF(gif) {
     const GIF = document.querySelector(gif);
@@ -121,12 +122,14 @@ async function MustIDtoData(listIDs, headers) {
     }
     
     // get full info from must ids
-    let filmList= await Promise.all(IDs.map(async ids => 
+    let filmList = await Promise.all(IDs.map(async ids => 
         fetch(`https://mustapp.com/api/users/id/${profileID}/products?embed=product`, {
             "headers": headers,
             "body": `{"ids":[${ids}]}`,
             "method": "POST"
-        }).then(response => response.json())
+        })
+        .then(response => response.json())
+        .then(items => getReviews(items,ids))
     ));
 
     return filmList.flat()
@@ -138,17 +141,17 @@ async function convertInfoToIMDbIDs(list, options) {
             item.product.release_date = '';
             warnList.push(item.product.title);
         }
-        const review = await getReview(item);
+        // const review = await getReview(item);
         let search = await searchOnTMDB(item, options);
         if (!search || search.results.length == 0) {
             errorList.push([item.product.title, item.product.release_date]);
-            return `,"${item.product.title}",${item.product.release_date.substring(0,4)},${item.user_product_info.rate},${item.user_product_info.modified_at.substring(0,10)},${review ?? ''}`;
+            return `,"${item.product.title}",${item.product.release_date.substring(0,4)},${item.user_product_info.rate},${item.user_product_info.modified_at.substring(0,10)},${item.product.review ?? ''}`;
         }
         let id = search.results[0]?.id || (errorList.push([item.product.title, item.product.release_date]) ? null : null);
         if (search.results.length > 1) {
             id = await guessMovie(search, item);
         }
-        return getIMDBid(id, item, options, review);
+        return getIMDBid(id, item, options, item.product.review);
     }));
 }
 
@@ -203,18 +206,19 @@ async function getIMDBid (id, item, options, review) {
     }
 }
 
-async function getReview(item) {
-    let review = '';
-    if (item.user_product_info.reviewed) {
-        res = await fetch(`https://mustapp.com/api/users/id/${profileID}/products?embed=review`, {
-            "headers": headers,
-            "body": `{"ids":[${item.product.id}]}`,
-            "method": "POST"
-        });
-        review = await res.json();
-        review = '"' + review[0].user_product_info.review.body + '"';
+async function getReviews(items, ids) {
+    ind+= items.length;
+    console.log(`Fetching review for items ${ind}`);
+    res = await fetch(`https://mustapp.com/api/users/id/${profileID}/products?embed=review`, {
+        "headers": headers,
+        "body": `{"ids":[${ids}]}`,
+        "method": "POST"
+    });
+    let reviews = await res.json();
+    for (let i = 0; i < reviews.length; i++) {
+        items[i].product.review = '"' + (reviews[i][0]?.user_product_info.review.body ?? '') + '"';
     }
-    return review;
+    return items;
 }
 
 /**
