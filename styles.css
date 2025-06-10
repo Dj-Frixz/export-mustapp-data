@@ -15,6 +15,9 @@ img {
     max-width: 100%;
     margin-inline: auto;
 }
+img.hidden {
+    display: none;
+}
 footer {
     /* position: fixed;
     bottom: 0px; */

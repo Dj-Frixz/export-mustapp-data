@@ -4,7 +4,7 @@ let headers = {};
 
 function toggleGIF(gif) {
     const GIF = document.querySelector(gif);
-    GIF.style.display = GIF.style.display === 'none' ? 'block' : 'none';
+    GIF.classList.toggle("hidden");
 }
 
 async function handleButton() {
