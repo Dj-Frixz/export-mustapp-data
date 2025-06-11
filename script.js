@@ -216,7 +216,7 @@ async function getReviews(items, ids) {
     });
     let reviews = await res.json();
     for (let i = 0; i < reviews.length; i++) {
-        items[i].product.review = '"' + (reviews[i][0]?.user_product_info.review.body ?? '') + '"';
+        items[i].product.review = '"' + (reviews[i].user_product_info.review?.body ?? '') + '"';
     }
     return items;
 }
