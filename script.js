@@ -42,9 +42,10 @@ function generateCSV(content, filename, _headers) {
     const csvContent = "data:text/csv;charset=utf-8," +
     _headers + " \n" +
     content.join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
+    link.setAttribute("href", url);
     link.setAttribute("download", filename + ".csv");
     link.style.display = "block";
     link.innerText = `Click here if the download doesn't start automatically (${filename}.csv)`;
