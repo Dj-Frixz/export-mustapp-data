@@ -1,7 +1,7 @@
+const diary = document.getElementById('diary-entries');
 const msg = document.getElementById('message');
 const msg2 = document.getElementById('missing');
 let headers = {};
-let ind = 0;
 
 function toggleGIF(gif) {
     const GIF = document.querySelector(gif);
@@ -142,17 +142,23 @@ async function convertInfoToIMDbIDs(list, options) {
             item.product.release_date = '';
             warnList.push(item.product.title);
         }
-        // const review = await getReview(item);
+        let when = item.user_product_info.modified_at.substring(0,10);
+        if (when && diary.value === 'reviewed') {
+            when = item.product.review !== '' ? when : '';
+        } else if (diary.value === 'none') {
+            when = '';
+        }
         let search = await searchOnTMDB(item, options);
         if (!search || search.results.length == 0) {
             errorList.push([item.product.title, item.product.release_date]);
-            return `,"${item.product.title}",${item.product.release_date.substring(0,4)},${item.user_product_info.rate},${item.user_product_info.modified_at.substring(0,10)},${item.product.review ?? ''}`;
+            return `,"${item.product.title}",${item.product.release_date.substring(0,4)
+            },${item.user_product_info.rate ?? ''},${when},${item.product.review}`;
         }
         let id = search.results[0]?.id || (errorList.push([item.product.title, item.product.release_date]) ? null : null);
         if (search.results.length > 1) {
             id = await guessMovie(search, item);
         }
-        return getIMDBid(id, item, options, item.product.review);
+        return getIMDBid(id, item, options, when, item.product.review);
     }));
 }
 
@@ -192,7 +198,7 @@ async function searchOnTMDB (item, options) {
  * @param {Object} options - The options for the TMDB API request.
  * @returns {String} A string containing the IMDb ID, title, year, rating, watched date, and review.
  */
-async function getIMDBid (id, item, options, review) {
+async function getIMDBid (id, item, options, when, review) {
     while (true) {
         let res = await fetch(`https://api.themoviedb.org/3/movie/${id}/external_ids`, options);
         let film = await res.json();
@@ -202,14 +208,14 @@ async function getIMDBid (id, item, options, review) {
                 film.imdb_id = '';
             }
             // IMDb ID, Title, Year, Rating10, WatchedDate, Review
-            return `${film.imdb_id},"${item.product.title}",${item.product.release_date.substring(0,4)},${item.user_product_info.rate},${item.user_product_info.modified_at.substring(0,10)},${review}`;
+            return `${film.imdb_id},"${item.product.title}",${item.product.release_date.substring(0,4)
+            },${item.user_product_info.rate ?? ''},${when},${review}`;
         }
     }
 }
 
 async function getReviews(items, ids) {
     ind+= items.length;
-    console.log(`Fetching review for items ${ind}`);
     res = await fetch(`https://mustapp.com/api/users/id/${profileID}/products?embed=review`, {
         "headers": headers,
         "body": `{"ids":[${ids}]}`,
@@ -217,7 +223,11 @@ async function getReviews(items, ids) {
     });
     let reviews = await res.json();
     for (let i = 0; i < reviews.length; i++) {
-        items[i].product.review = '"' + (reviews[i].user_product_info.review?.body ?? '') + '"';
+        items[i].product.review = reviews[i].user_product_info.review?.body ?? '';
+        items[i].product.review = items[i].product.review.replace(/"/g, '""'); // Escape quotes for CSV
+        if (items[i].product.review !== '') {
+            items[i].product.review = `"${items[i].product.review}"`; // Wrap in quotes for CSV
+        }
     }
     return items;
 }

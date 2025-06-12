@@ -64,6 +64,11 @@
   <div class="input-group">
     <h2>&#x2bae; Enter your Must Username to get your data &#x2baf;</h2>
       <input type="text" id="username" autocomplete="username" placeholder="Enter username without @" oninput="document.getElementById('btn').disabled = false;">
+      <select id="diary-entries" title="What movies do you want to add to the diary?" tooltip="What movies do you want to add to the diary?">
+        <option value="all">Log all movies</option>
+        <option value="reviewed">Log reviewed only</option>
+        <option value="none">Don't add to diary</option>
+      </select>
       <button id="btn" type="button" onclick="handleButton()" disabled>Export</button>
       <p id="message"></p>
       <p id="missing" class="warning"></p>
@@ -100,5 +105,5 @@
     This website uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.
   </footer>
 </body>
-<script src="script.js?v=0.20"></script>
+<script src="script.js"></script>
 </html>
