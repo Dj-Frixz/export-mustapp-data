@@ -215,7 +215,6 @@ async function getIMDBid (id, item, options, when, review) {
 }
 
 async function getReviews(items, ids) {
-    ind+= items.length;
     res = await fetch(`https://mustapp.com/api/users/id/${profileID}/products?embed=review`, {
         "headers": headers,
         "body": `{"ids":[${ids}]}`,
