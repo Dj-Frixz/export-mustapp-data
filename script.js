@@ -39,9 +39,7 @@ async function handleButton() {
 }
 
 function generateCSV(content, filename, _headers) {
-    const csvContent = "data:text/csv;charset=utf-8," +
-    _headers + " \n" +
-    content.join('\n');
+    const csvContent = _headers + " \n" + content.join('\n');
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
