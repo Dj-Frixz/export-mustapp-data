@@ -32,7 +32,7 @@ async function handleButton() {
             "\n(If you're migrating to Letterboxd don't worry the importer will try to find them by itself.\n" +
             "Otherwise, you might want to check the CSV file if you need the IMDB ids.)\n\n - " + errorList.join("\n - ");
     }
-    msg.innerText += "Generating CSVs...\n";
+    msg.innerText += "\nGenerating CSVs...\n\n";
     generateCSV(ids.want, username + "_want", "imdbID,Title,Year,Rating10,WatchedDate,Review");
     generateCSV(ids.watched, username + "_watched", "imdbID,Title,Year,Rating10,WatchedDate,Review");
     document.getElementById("btn").disabled = false;
@@ -75,9 +75,9 @@ async function getData(username) {
             await new Promise(resolve => setTimeout(resolve, 2000)); // Pause for 2 second
         }
     }
-    msg.innerText = "Processed " + (IMDbIDs.want.length + IMDbIDs.watched.length) + "/" + n + " (total)\n";
+    msg.innerText = "Processed " + (IMDbIDs.want.length + IMDbIDs.watched.length) + "/" + n + " (total)";
     msg.innerText += " ~ Failed " + errorList.length + "/" + n + 
-        " ~ Unclear " + warnList.length + '\n';
+        " ~ Uncertain " + warnList.length + '\n';
     return IMDbIDs;
 }
 

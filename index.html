@@ -62,7 +62,7 @@
     </a>.
   </p>
   <div class="input-group">
-    <h2>&#x2bae; Enter your Must Username to get your data &#x2baf;</h2>
+    <h2>Enter your Must Username to get your data</h2>
       <input type="text" id="username" autocomplete="username" placeholder="Enter username without @" oninput="document.getElementById('btn').disabled = false;">
       <select id="diary-entries" title="What movies do you want to add to the diary?" tooltip="What movies do you want to add to the diary?">
         <option value="all">Log all movies</option>
@@ -98,6 +98,18 @@
         (on the browser!) and select "Import films to watchlist...", then select the downloaded 
         CSV file with your 'want' (to import to a custom list the process is similar). Again, 
         double check the movies which reported errors in the exporting process, if there were any.
+      </p>
+    </div>
+    <div class="tutorial">
+      <h3>What do "log movies" and "add to diary" mean?</h3>
+      <p>
+        In Letterboxd, to "log a movie" means specifying a watched date for the movie, adding it to your diary, and recording your viewing in the 
+        activity feed (visible to friends and other users). The only differences with just marking a movie as watched is that you could have watched 
+        it at any time. But then, why not add every film to the diary? Because Must doesn't really have a watched date, it saves only the "last modified" 
+        date, which corresponds to the last time you changed the rating or review of a movie, otherwise it is when you marked it as watched. This means 
+        these dates could be very inaccurate, especially if you tend to change your ratings or reviews often. This is why I decided to let you choose 
+        based on your preferences. If you don't care at all about the diary you can just select "Don't add to diary". You can still change or remove 
+        these dates later on Letterboxd, so if you're in doubt just leave the option on "Log all movies".
       </p>
     </div>
   </div>
