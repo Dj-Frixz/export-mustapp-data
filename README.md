@@ -4,7 +4,7 @@ Export your Must watched and wanted movies (and ratings, and reviews, and so on)
 At the moment the only officially supported export format is for __[Letterboxd](https://letterboxd.com/import/)__, to import into other platforms you might have to modify the file ([look at some suggestions](#what-do-i-do-with-the-file-downloaded)).
 Assuming you are importing on Letterboxd the movies will also be added to your diary, if you choose to do so in the Letterboxd importer. 
 
-### ✅ Now working (tested on 16-04-2025)
+### ✅ Now working (tested on 12-06-2025)
 _(there might be issues if there are too many concurrent users)_
 
 ## Installation
