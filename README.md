@@ -13,6 +13,38 @@ Zero installations, just go to the [website](https://dj-frixz.github.io/export-m
 ## Usage
 [Click here](https://dj-frixz.github.io/export-mustapp-data/) to enter the site, insert your [Must username](#where-do-i-find-my-must-username) (without the _@_!) and click _Export_. Wait for it to complete the process and the CSV with all your movies and ratings should be automatically downloaded to your device!
 
+## Run locally without the hosted site
+You can also export directly from this checkout:
+
+```sh
+node export-must-csv.js your_must_username --out-dir exports
+```
+
+This writes:
+
+- `exports/your_must_username_want.csv`
+- `exports/your_must_username_watched.csv`
+- `exports/your_must_username_shows.csv`
+- `exports/your_must_username_seasons.csv`
+
+The shows CSV includes show-level TV progress from Must, including entries from Must's `shows` list for currently watching shows: show title, status, rating, total episode count, watched episode count, first unwatched episode ID, first unwatched episode title, and modified date.
+
+The seasons CSV includes season-level TV progress from Must when the public API returns season records: season title, status, rating, total episode count, episodes watched, first unwatched episode, and modified date. It may be empty if Must only returns show-level progress for your profile.
+
+You can pass a profile URL instead of a bare username:
+
+```sh
+node export-must-csv.js https://mustapp.com/@your_must_username --out-dir exports
+```
+
+Diary dates default to the website behavior, which logs all movies. To skip watched dates:
+
+```sh
+node export-must-csv.js your_must_username --diary none --out-dir exports
+```
+
+The exporter uses the same public Must endpoints as the website, so your Must profile needs to be public while exporting.
+
 ### Where do I find my Must username?
 To get your Must username:
 - **on mobile**: go to profile and touch your profile photo to get to the settings, then copy the "Nickname" (not the "Name"!), or _share via link_ and then copy the username without the "@";

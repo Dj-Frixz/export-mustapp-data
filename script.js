@@ -2,6 +2,9 @@ const diary = document.getElementById('diary-entries');
 const msg = document.getElementById('message');
 const msg2 = document.getElementById('missing');
 let headers = {};
+let profileID = null;
+let errorList = [];
+let warnList = [];
 
 function toggleGIF(gif) {
     const GIF = document.querySelector(gif);
@@ -9,37 +12,59 @@ function toggleGIF(gif) {
 }
 
 async function handleButton() {
-    window.errorList = [];
-    window.warnList = [];
-    window.profileID = null;
+    errorList = [];
+    warnList = [];
+    profileID = null;
     msg2.innerText = "";
+    msg2.classList.remove("success");
     document.getElementById("btn").disabled = true;
-    let username = document.getElementById('username').value;
+    const username = normalizeUsername(document.getElementById('username').value);
     msg.innerText = "Fetching data for "+username+"...\n";
-    let ids = await getData(username);
-    if (errorList.length == 0 && warnList.length == 0) {
-        msg2.classList.add("success");
-        msg2.innerText = "All movies found!\n";
-    } else {
-        msg2.classList.remove("success");
-        if (warnList.length > 0) {
-            msg2.innerText = "These movies might be wrong:\n" +
-                "(If you're migrating to Letterboxd just verify them during the import process.\n" +
-                "Otherwise, you might want to check the CSV file.)\n\n - " +
-                warnList.join("\n - ") + "\n\n";
+
+    try {
+        if (!username) {
+            throw new Error("Enter your Must username without @.");
         }
-        msg2.innerText += "These movies weren't found: " +
-            "\n(If you're migrating to Letterboxd don't worry the importer will try to find them by itself.\n" +
-            "Otherwise, you might want to check the CSV file if you need the IMDB ids.)\n\n - " + errorList.join("\n - ");
+
+        let ids = await getData(username);
+        if (errorList.length == 0 && warnList.length == 0) {
+            msg2.classList.add("success");
+            msg2.innerText = "All movies found!\n";
+        } else {
+            if (warnList.length > 0) {
+                msg2.innerText = "These movies might be wrong:\n" +
+                    "(If you're migrating to Letterboxd just verify them during the import process.\n" +
+                    "Otherwise, you might want to check the CSV file.)\n\n - " +
+                    warnList.join("\n - ") + "\n\n";
+            }
+            if (errorList.length > 0) {
+                msg2.innerText += "These movies weren't found: " +
+                    "\n(If you're migrating to Letterboxd don't worry the importer will try to find them by itself.\n" +
+                    "Otherwise, you might want to check the CSV file if you need the IMDB ids.)\n\n - " + errorList.join("\n - ");
+            }
+        }
+        msg.innerText += "\nGenerating CSVs...\n\n";
+        generateCSV(ids.want, username + "_want", "imdbID,Title,Year,Rating10,WatchedDate,Review");
+        generateCSV(ids.watched, username + "_watched", "imdbID,Title,Year,Rating10,WatchedDate,Review");
+    } catch (error) {
+        msg.innerText += "\nExport failed.\n";
+        msg2.innerText = error.message || "Something went wrong while exporting your Must data.";
+    } finally {
+        document.getElementById("btn").disabled = false;
     }
-    msg.innerText += "\nGenerating CSVs...\n\n";
-    generateCSV(ids.want, username + "_want", "imdbID,Title,Year,Rating10,WatchedDate,Review");
-    generateCSV(ids.watched, username + "_watched", "imdbID,Title,Year,Rating10,WatchedDate,Review");
-    document.getElementById("btn").disabled = false;
+}
+
+function normalizeUsername(value) {
+    return value
+        .trim()
+        .replace(/^https?:\/\/(?:www\.)?mustapp\.com\/@?/i, "")
+        .replace(/^@/, "")
+        .split(/[/?#]/)[0]
+        .trim();
 }
 
 function generateCSV(content, filename, _headers) {
-    const csvContent = _headers + " \n" + content.join('\n');
+    const csvContent = _headers + "\n" + content.join('\n');
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -64,7 +89,7 @@ async function getData(username) {
     };
 
     let IMDbIDs = {want: [], watched: []};
-    n = mustData.want.length + mustData.watched.length;
+    const n = mustData.want.length + mustData.watched.length;
     let k = 50;
     for (let list_index of Object.keys(mustData)) {
         for (let i = 0; i < mustData[list_index].length; i += k) {
@@ -83,36 +108,39 @@ async function getData(username) {
 
 async function exportMustData(username) {
     
-    const profileRes = await fetch(`https://mustapp.com/api/users/uri/${username}`);
+    const profileRes = await fetch(`https://mustapp.com/api/users/uri/${encodeURIComponent(username)}`);
+    if (!profileRes.ok) {
+        throw new Error(`Must user "${username}" was not found. Check the username and try again.`);
+    }
+
     const profile = await profileRes.json();
+    if (profile.error) {
+        throw new Error(profile.error.message || `Must user "${username}" was not found.`);
+    }
+    if (profile.is_private || !profile.lists) {
+        throw new Error("This Must profile is private or does not expose movie lists. Make the profile public before exporting.");
+    }
+
     profileID = profile.id;
-    const shows = profile.lists.shows; // the list of Must IDs for watched shows
     headers = {
         "accept": "*/*",
         "accept-language": "en",
         "bearer": "3a77331c-943f-44e8-b636-5deebcbe33b9",
         "content-type": "application/json;v=1873",
-        "priority": "u=1, i",
-        "sec-ch-ua": "\"Google Chrome\";v=\"129\", \"Not=A?Brand\";v=\"8\", \"Chromium\";v=\"129\"",
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": "\"Windows\"",
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "same-origin",
         "x-client-version": "frontend_site/2.24.2-390.390",
-        "x-requested-with": "XMLHttpRequest",
-        "cookie": `G_ENABLED_IDPS=google; token=3a77331c-943f-44e8-b636-5deebcbe33b9; uid=${profile.id}`,
-        "Referer": `https://mustapp.com/@${username}/watched`,
-        "Referrer-Policy": "strict-origin-when-cross-origin"
+        "x-requested-with": "XMLHttpRequest"
     };
 
     return {
-        want : await MustIDtoData(profile.lists.want, headers), // the list of Must IDs for films in watchlist
-        watched : await MustIDtoData(profile.lists.watched, headers) // the list of watched films
+        want : await MustIDtoData(profile.lists.want || [], headers), // the list of Must IDs for films in watchlist
+        watched : await MustIDtoData(profile.lists.watched || [], headers) // the list of watched films
     }
 }
 
 async function MustIDtoData(listIDs, headers) {
+    if (listIDs.length === 0) {
+        return [];
+    }
 
     // slice IDs in chunks of size 100 to match Must limitations
     let IDs = [listIDs.slice(0,100)];
@@ -124,10 +152,15 @@ async function MustIDtoData(listIDs, headers) {
     let filmList = await Promise.all(IDs.map(async ids => 
         fetch(`https://mustapp.com/api/users/id/${profileID}/products?embed=product`, {
             "headers": headers,
-            "body": `{"ids":[${ids}]}`,
+            "body": JSON.stringify({ ids }),
             "method": "POST"
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Must returned an error while fetching movie details.");
+            }
+            return response.json();
+        })
         .then(items => getReviews(items,ids))
     ));
 
@@ -149,8 +182,7 @@ async function convertInfoToIMDbIDs(list, options) {
         let search = await searchOnTMDB(item, options);
         if (!search || search.results.length == 0) {
             errorList.push([item.product.title, item.product.release_date]);
-            return `,"${item.product.title}",${item.product.release_date.substring(0,4)
-            },${item.user_product_info.rate ?? ''},${when},${item.product.review}`;
+            return toCSVRow('', item, when, item.product.review);
         }
         let id = search.results[0]?.id || (errorList.push([item.product.title, item.product.release_date]) ? null : null);
         if (search.results.length > 1) {
@@ -168,15 +200,16 @@ async function convertInfoToIMDbIDs(list, options) {
  */
 async function searchOnTMDB (item, options) {
     let title = item.product.title;
+    const year = item.product.release_date.substring(0, 4);
     for (let i = 0; i < 3; i++) {
         // I use year because it seems the search engine is more flexible with it and it is less prone to mismatch,
         // if it doesn't work, it could be useful retrying with primary_release_year instead of year
-        let res = await fetch(`https://api.themoviedb.org/3/search/movie?query=${encodeURI(title)}&include_adult=true&year=${item.product.release_date}&page=1`, options);
+        let res = await fetch(`https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(title)}&include_adult=true&year=${year}&page=1`, options);
         let search = await res.json();
         if (typeof search !== 'undefined') {
             if (search.results.length == 0) {
                 // If there are no results, we try to match the release date.
-                res = await fetch(`https://api.themoviedb.org/3/search/movie?query=${encodeURI(title)}&include_adult=true&page=1`, options);
+                res = await fetch(`https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(title)}&include_adult=true&page=1`, options);
                 search = await res.json();
             }
             // Assuming a title with less than 4 characters has to return some results.
@@ -197,36 +230,59 @@ async function searchOnTMDB (item, options) {
  * @returns {String} A string containing the IMDb ID, title, year, rating, watched date, and review.
  */
 async function getIMDBid (id, item, options, when, review) {
-    while (true) {
-        let res = await fetch(`https://api.themoviedb.org/3/movie/${id}/external_ids`, options);
-        let film = await res.json();
-        if (typeof film !== 'undefined') {
-            if (film.imdb_id == null || film.imdb_id == undefined) {
-                errorList.push([item.product.title, item.product.release_date]);
-                film.imdb_id = '';
-            }
-            // IMDb ID, Title, Year, Rating10, WatchedDate, Review
-            return `${film.imdb_id},"${item.product.title}",${item.product.release_date.substring(0,4)
-            },${item.user_product_info.rate ?? ''},${when},${review}`;
-        }
+    if (!id) {
+        errorList.push([item.product.title, item.product.release_date]);
+        return toCSVRow('', item, when, review);
     }
+
+    let res = await fetch(`https://api.themoviedb.org/3/movie/${id}/external_ids`, options);
+    let film = await res.json();
+    if (film.imdb_id == null || film.imdb_id == undefined) {
+        errorList.push([item.product.title, item.product.release_date]);
+        film.imdb_id = '';
+    }
+    // IMDb ID, Title, Year, Rating10, WatchedDate, Review
+    return toCSVRow(film.imdb_id, item, when, review);
 }
 
 async function getReviews(items, ids) {
-    res = await fetch(`https://mustapp.com/api/users/id/${profileID}/products?embed=review`, {
+    const res = await fetch(`https://mustapp.com/api/users/id/${profileID}/products?embed=review`, {
         "headers": headers,
-        "body": `{"ids":[${ids}]}`,
+        "body": JSON.stringify({ ids }),
         "method": "POST"
     });
+    if (!res.ok) {
+        warnList.push(`Reviews for ${ids.length} movies`);
+        items.forEach(item => {
+            item.product.review = '';
+        });
+        return items;
+    }
+
     let reviews = await res.json();
     for (let i = 0; i < reviews.length; i++) {
         items[i].product.review = reviews[i].user_product_info.review?.body ?? '';
-        items[i].product.review = items[i].product.review.replace(/"/g, '""'); // Escape quotes for CSV
-        if (items[i].product.review !== '') {
-            items[i].product.review = `"${items[i].product.review}"`; // Wrap in quotes for CSV
-        }
     }
     return items;
+}
+
+function toCSVRow(imdbID, item, when, review) {
+    return [
+        imdbID,
+        item.product.title,
+        item.product.release_date.substring(0, 4),
+        item.user_product_info.rate ?? '',
+        when,
+        review
+    ].map(csvEscape).join(',');
+}
+
+function csvEscape(value) {
+    const text = String(value ?? '');
+    if (/[",\n\r]/.test(text)) {
+        return `"${text.replace(/"/g, '""')}"`;
+    }
+    return text;
 }
 
 /**
@@ -239,7 +295,7 @@ async function guessMovie(search, item) {
     // The first check is title exact match, as it is the most reliable.
     // If there are no results, we try to match the release date.
     // Year match is skipped as it is highly unreliable.
-    results = search.results.filter(movie => movie.title == item.product.title);
+    let results = search.results.filter(movie => movie.title == item.product.title);
     if (results.length == 0) {
         results = search.results.filter(movie => movie.release_date == item.product.release_date);
         if (results.length == 0) {
